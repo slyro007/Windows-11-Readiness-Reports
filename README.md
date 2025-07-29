@@ -35,19 +35,73 @@ A comprehensive web application for analyzing and reporting Windows 11 compatibi
 - **Charts**: Recharts for interactive data visualization
 - **PDF Generation**: jsPDF with custom table rendering
 - **Animation**: Framer Motion for smooth transitions
-- **Storage**: LocalStorage for client-side data persistence
+- **Storage**: Server-side JSON storage with localStorage fallback
+- **Deployment**: Docker containerization for easy deployment
 
-## 📦 Installation
+## 📦 Installation & Deployment
 
-### Prerequisites
+### Option 1: Docker Deployment (Recommended)
+
+#### Prerequisites
+- Docker and Docker Compose
+- Linux server or VM with sufficient disk space
+
+#### Quick Start
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/slyro007/Windows-11-Readiness-Reports.git
+   cd Windows-11-Readiness-Reports
+   ```
+
+2. **Build and run with Docker**
+   ```bash
+   # Build the Docker image
+   docker build -t windows11-readiness-app .
+   
+   # Create data directory for persistent storage
+   mkdir -p $(pwd)/data
+   
+   # Run the container with volume mounting
+   docker run -d -p 3000:3000 -v $(pwd)/data:/app/data --name windows11-app windows11-readiness-app
+   ```
+
+3. **Access the application**
+   - Navigate to `http://YOUR_SERVER_IP:3000`
+   - Reports are shared between all users accessing the application
+   - Data persists across container restarts
+
+#### Docker Management Commands
+```bash
+# View running containers
+docker ps
+
+# View application logs
+docker logs windows11-app
+
+# Stop the application
+docker stop windows11-app
+
+# Start the application
+docker start windows11-app
+
+# Update the application
+git pull origin master
+docker build --no-cache -t windows11-readiness-app .
+docker stop windows11-app && docker rm windows11-app
+docker run -d -p 3000:3000 -v $(pwd)/data:/app/data --name windows11-app windows11-readiness-app
+```
+
+### Option 2: Local Development
+
+#### Prerequisites
 - Node.js 18.0 or higher
 - npm or yarn package manager
 
-### Setup
+#### Setup
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/Windows11-Readiness-Webapp.git
-   cd Windows11-Readiness-Webapp
+   git clone https://github.com/slyro007/Windows-11-Readiness-Reports.git
+   cd Windows-11-Readiness-Reports
    ```
 
 2. **Install dependencies**
@@ -115,12 +169,16 @@ NEXT_PUBLIC_GA_ID=your-analytics-id
 ## 📁 Project Structure
 
 ```
-Windows11-Readiness-Webapp/
+Windows11-Readiness-Reports/
 ├── public/                 # Static assets
 │   └── wolff-logics-logo.png
 ├── src/
 │   ├── app/               # Next.js app directory
 │   │   ├── api/          # API routes
+│   │   │   ├── process-reports/
+│   │   │   │   └── route.ts    # Report processing endpoint
+│   │   │   └── reports/
+│   │   │       └── route.ts    # Report storage CRUD operations
 │   │   ├── globals.css   # Global styles
 │   │   ├── layout.tsx    # Root layout
 │   │   └── page.tsx      # Home page
@@ -132,6 +190,10 @@ Windows11-Readiness-Webapp/
 │       ├── ResultsPreview.tsx     # Main results display
 │       └── providers/
 │           └── ThemeProvider.tsx  # Theme management
+├── data/                  # Server-side storage (created at runtime)
+│   └── reports.json       # Persistent report storage
+├── Dockerfile             # Docker container configuration
+├── .dockerignore          # Docker build exclusions
 ├── analyze_excel.py       # Python analysis script
 ├── process_company.py     # Company processing utilities
 └── package.json          # Dependencies and scripts
@@ -145,11 +207,23 @@ Processes uploaded RMM and ScalePad reports
 **Request Body:**
 ```json
 {
-  "rmmFile": "base64-encoded-excel-file",
-  "scalepadFile": "base64-encoded-excel-file", // Optional
+  "files": [
+    {
+      "name": "rmm-report.xlsx",
+      "type": "rmm",
+      "data": [...],
+      "size": 12345
+    },
+    {
+      "name": "scalepad-report.xlsx", 
+      "type": "scalepad",
+      "data": [...],
+      "size": 6789
+    }
+  ],
   "companyInfo": {
     "name": "Company Name",
-    "site": "Location", // Optional
+    "site": "Location",
     "tenant": "TENANT_CODE"
   }
 }
@@ -166,13 +240,50 @@ Processes uploaded RMM and ScalePad reports
     "unsupported": 8,
     "offline": 2
   },
-  "data": [...], // Processed machine data
-  "charts": {...}, // Chart data
+  "data": [...],
+  "charts": {...},
   "files": {
     "excel": "base64-csv-data"
   }
 }
 ```
+
+### GET `/api/reports`
+Retrieves all stored reports
+
+**Response:**
+```json
+[
+  {
+    "id": "1640995200000",
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "companyInfo": {
+      "name": "Company Name",
+      "site": "Main Office",
+      "tenant": "TENANT"
+    },
+    "results": {...},
+    "summary": {...}
+  }
+]
+```
+
+### POST `/api/reports`
+Saves a new report to server storage
+
+**Request Body:**
+```json
+{
+  "id": "1640995200000",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "companyInfo": {...},
+  "results": {...},
+  "summary": {...}
+}
+```
+
+### DELETE `/api/reports?id={reportId}`
+Deletes a specific report from server storage
 
 ## 🎨 Customization
 
@@ -188,6 +299,32 @@ PDF generation styling can be customized in the `downloadPDF` function:
 - Color schemes (always uses light mode for PDFs)
 - Table formatting and column widths
 - Page layout and margins
+
+## 💾 Data Management & Backup
+
+### Server Storage
+Reports are stored in `/app/data/reports.json` inside the Docker container and mapped to `./data/reports.json` on the host system.
+
+### Backup Strategy
+```bash
+# Backup reports data
+cp ./data/reports.json ./backups/reports-$(date +%Y%m%d).json
+
+# Restore from backup
+cp ./backups/reports-20240101.json ./data/reports.json
+docker restart windows11-app
+```
+
+### Migration
+To move the application to a new server:
+1. Stop the container: `docker stop windows11-app`
+2. Copy the `data/` directory to the new server
+3. Set up Docker on the new server
+4. Deploy the application with the existing data directory
+
+### Storage Location
+- **Docker deployment**: `./data/reports.json` (host) → `/app/data/reports.json` (container)
+- **Local development**: Browser localStorage with server fallback
 
 ## 🐛 Troubleshooting
 
@@ -229,7 +366,16 @@ For technical support or feature requests:
 
 ## 📈 Changelog
 
-### v1.0.0 (Current)
+### v1.1.0 (Current)
+- ✅ **Docker Deployment**: Full containerization with persistent storage
+- ✅ **Server-Side Storage**: Shared reports between users with JSON file storage
+- ✅ **Multi-User Access**: Multiple users can access and view the same reports
+- ✅ **Data Persistence**: Reports survive container restarts and system reboots
+- ✅ **RESTful API**: Complete CRUD operations for report management
+- ✅ **Volume Mounting**: Easy backup and data management with Docker volumes
+- ✅ **Fallback Support**: localStorage fallback for offline compatibility
+
+### v1.0.0
 - ✅ Initial release with full Windows 11 compatibility analysis
 - ✅ Multi-company support with smart dropdown selection
 - ✅ Professional PDF report generation with auto-fit columns

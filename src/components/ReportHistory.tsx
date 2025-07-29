@@ -264,7 +264,9 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onNewReport }) => {
       {/* Companies View */}
       {viewMode === 'companies' && (
         <Grid container spacing={3}>
-          {Object.entries(groupedReports).map(([companyName, companyReports]) => {
+          {Object.entries(groupedReports)
+            .sort(([a], [b]) => a.localeCompare(b)) // Sort companies alphabetically
+            .map(([companyName, companyReports]) => {
             const { latestReport, totalReports } = getCompanyStats(companyReports)
             
             return (

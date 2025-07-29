@@ -82,29 +82,39 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onNewReport }) => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
 
   useEffect(() => {
-    // Load reports from localStorage
-    const savedReports = localStorage.getItem('windows11-reports')
-    if (savedReports) {
-      const loadedReports: ReportHistoryItem[] = JSON.parse(savedReports)
-      setReports(loadedReports)
-      
-      // Group reports by company
-      const grouped = loadedReports.reduce((acc, report) => {
-        const companyName = report.companyInfo.name
-        if (!acc[companyName]) {
-          acc[companyName] = []
+    // Load reports from server
+    const loadReports = async () => {
+      try {
+        const response = await fetch('/api/reports')
+        if (response.ok) {
+          const loadedReports: ReportHistoryItem[] = await response.json()
+          setReports(loadedReports)
+          
+          // Group reports by company
+          const grouped = loadedReports.reduce((acc, report) => {
+            const companyName = report.companyInfo.name
+            if (!acc[companyName]) {
+              acc[companyName] = []
+            }
+            acc[companyName].push(report)
+            return acc
+          }, {} as GroupedReports)
+          
+          // Sort reports within each company by timestamp (newest first)
+          Object.keys(grouped).forEach(companyName => {
+            grouped[companyName].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          })
+          
+          setGroupedReports(grouped)
+        } else {
+          console.error('Failed to load reports')
         }
-        acc[companyName].push(report)
-        return acc
-      }, {} as GroupedReports)
-      
-      // Sort reports within each company by timestamp (newest first)
-      Object.keys(grouped).forEach(companyName => {
-        grouped[companyName].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      })
-      
-      setGroupedReports(grouped)
+      } catch (error) {
+        console.error('Error loading reports:', error)
+      }
     }
+    
+    loadReports()
   }, [])
 
   const handleViewReport = (report: ReportHistoryItem) => {
@@ -112,31 +122,43 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onNewReport }) => {
     setViewDialogOpen(true)
   }
 
-  const handleDeleteReport = (reportId: string) => {
-    const updatedReports = reports.filter(report => report.id !== reportId)
-    setReports(updatedReports)
-    localStorage.setItem('windows11-reports', JSON.stringify(updatedReports))
-    
-    // Update grouped reports
-    const grouped = updatedReports.reduce((acc, report) => {
-      const companyName = report.companyInfo.name
-      if (!acc[companyName]) {
-        acc[companyName] = []
+  const handleDeleteReport = async (reportId: string) => {
+    try {
+      const response = await fetch(`/api/reports?id=${reportId}`, { 
+        method: 'DELETE' 
+      })
+      
+      if (response.ok) {
+        // Update local state
+        const updatedReports = reports.filter(report => report.id !== reportId)
+        setReports(updatedReports)
+        
+        // Update grouped reports
+        const grouped = updatedReports.reduce((acc, report) => {
+          const companyName = report.companyInfo.name
+          if (!acc[companyName]) {
+            acc[companyName] = []
+          }
+          acc[companyName].push(report)
+          return acc
+        }, {} as GroupedReports)
+        
+        Object.keys(grouped).forEach(companyName => {
+          grouped[companyName].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        })
+        
+        setGroupedReports(grouped)
+        
+        // If we deleted all reports for the selected company, go back to companies view
+        if (selectedCompany && (!grouped[selectedCompany] || grouped[selectedCompany].length === 0)) {
+          setViewMode('companies')
+          setSelectedCompany(null)
+        }
+      } else {
+        console.error('Failed to delete report')
       }
-      acc[companyName].push(report)
-      return acc
-    }, {} as GroupedReports)
-    
-    Object.keys(grouped).forEach(companyName => {
-      grouped[companyName].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    })
-    
-    setGroupedReports(grouped)
-    
-    // If we deleted all reports for the selected company, go back to companies view
-    if (selectedCompany && (!grouped[selectedCompany] || grouped[selectedCompany].length === 0)) {
-      setViewMode('companies')
-      setSelectedCompany(null)
+    } catch (error) {
+      console.error('Error deleting report:', error)
     }
   }
 

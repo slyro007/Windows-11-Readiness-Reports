@@ -99,7 +99,7 @@ export default function HomePage() {
       const data = await response.json()
       setResults(data)
       
-      // Save report to history
+      // Save report to server
       const reportHistory = {
         id: Date.now().toString(),
         timestamp: new Date().toISOString(),
@@ -108,10 +108,22 @@ export default function HomePage() {
         summary: data.summary
       }
       
-      const existingReports = localStorage.getItem('windows11-reports')
-      const reports = existingReports ? JSON.parse(existingReports) : []
-      reports.unshift(reportHistory) // Add to beginning
-      localStorage.setItem('windows11-reports', JSON.stringify(reports))
+      try {
+        await fetch('/api/reports', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(reportHistory),
+        })
+      } catch (error) {
+        console.error('Error saving report to server:', error)
+        // Fallback to localStorage if server save fails
+        const existingReports = localStorage.getItem('windows11-reports')
+        const reports = existingReports ? JSON.parse(existingReports) : []
+        reports.unshift(reportHistory)
+        localStorage.setItem('windows11-reports', JSON.stringify(reports))
+      }
       
       setActiveStep(3)
     } catch (err) {

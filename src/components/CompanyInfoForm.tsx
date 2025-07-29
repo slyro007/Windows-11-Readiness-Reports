@@ -31,37 +31,70 @@ const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ onSubmit, initialData
   const [tenantSlug, setTenantSlug] = useState(initialData.tenant)
   const [existingCompanies, setExistingCompanies] = useState<ExistingCompany[]>([])
 
-  // Load existing companies from localStorage
+  // Load existing companies from server
   useEffect(() => {
-    try {
-      const savedReports = localStorage.getItem('windows11-reports')
-      if (savedReports) {
-        const reports = JSON.parse(savedReports)
-        
-        // Extract unique companies
-        const companiesMap = new Map<string, ExistingCompany>()
-        
-        reports.forEach((report: any) => {
-          if (report.companyInfo?.name && report.companyInfo?.tenant) {
-            const key = `${report.companyInfo.name}-${report.companyInfo.tenant}`
-            if (!companiesMap.has(key)) {
-              companiesMap.set(key, {
-                name: report.companyInfo.name,
-                tenant: report.companyInfo.tenant,
-                site: report.companyInfo.site || ''
-              })
+    const loadCompanies = async () => {
+      try {
+        const response = await fetch('/api/reports')
+        if (response.ok) {
+          const reports = await response.json()
+          
+          // Extract unique companies
+          const companiesMap = new Map<string, ExistingCompany>()
+          
+          reports.forEach((report: any) => {
+            if (report.companyInfo?.name && report.companyInfo?.tenant) {
+              const key = `${report.companyInfo.name}-${report.companyInfo.tenant}`
+              if (!companiesMap.has(key)) {
+                companiesMap.set(key, {
+                  name: report.companyInfo.name,
+                  tenant: report.companyInfo.tenant,
+                  site: report.companyInfo.site || ''
+                })
+              }
             }
+          })
+          
+          const uniqueCompanies = Array.from(companiesMap.values())
+            .sort((a, b) => a.name.localeCompare(b.name))
+          
+          setExistingCompanies(uniqueCompanies)
+        }
+      } catch (error) {
+        console.error('Error loading existing companies:', error)
+        // Fallback to localStorage if server fails
+        try {
+          const savedReports = localStorage.getItem('windows11-reports')
+          if (savedReports) {
+            const reports = JSON.parse(savedReports)
+            
+            const companiesMap = new Map<string, ExistingCompany>()
+            
+            reports.forEach((report: any) => {
+              if (report.companyInfo?.name && report.companyInfo?.tenant) {
+                const key = `${report.companyInfo.name}-${report.companyInfo.tenant}`
+                if (!companiesMap.has(key)) {
+                  companiesMap.set(key, {
+                    name: report.companyInfo.name,
+                    tenant: report.companyInfo.tenant,
+                    site: report.companyInfo.site || ''
+                  })
+                }
+              }
+            })
+            
+            const uniqueCompanies = Array.from(companiesMap.values())
+              .sort((a, b) => a.name.localeCompare(b.name))
+            
+            setExistingCompanies(uniqueCompanies)
           }
-        })
-        
-        const uniqueCompanies = Array.from(companiesMap.values())
-          .sort((a, b) => a.name.localeCompare(b.name))
-        
-        setExistingCompanies(uniqueCompanies)
+        } catch (fallbackError) {
+          console.error('Error loading companies from localStorage:', fallbackError)
+        }
       }
-    } catch (error) {
-      console.error('Error loading existing companies:', error)
     }
+    
+    loadCompanies()
   }, [])
 
   const handleCompanySelect = (company: ExistingCompany | null) => {

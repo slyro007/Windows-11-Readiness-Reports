@@ -230,7 +230,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
       }
 
       if (!hasRmm || !hasScalepad) {
-        const missing = []
+        const missing: string[] = []
         if (!hasRmm) missing.push('RMM Report')
         if (!hasScalepad) missing.push('ScalePad Report')
         setValidationErrors(prev => [...prev, `Missing required files: ${missing.join(', ')}`])

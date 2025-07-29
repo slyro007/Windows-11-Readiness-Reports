@@ -307,13 +307,13 @@ const ResultsPreview: React.FC<ResultsPreviewProps> = ({ results, companyInfo })
              Object.entries(sites).forEach(([siteName, siteData]) => {
          checkPageBreak(50)
          
-         // Sort data by Status (Pass, Fail, Unsupported, Offline)
-         const statusOrder = { 'Pass': 1, 'Fail': 2, 'Unsupported': 3, 'Offline': 4 }
-         const sortedSiteData = siteData.sort((a, b) => {
-           const statusA = a['Windows 11 Status'] || 'Unknown'
-           const statusB = b['Windows 11 Status'] || 'Unknown'
-           return (statusOrder[statusA] || 5) - (statusOrder[statusB] || 5)
-         })
+                 // Sort data by Status (Pass, Fail, Unsupported, Offline)
+        const statusOrder: Record<string, number> = { 'Pass': 1, 'Fail': 2, 'Unsupported': 3, 'Offline': 4 }
+        const sortedSiteData = siteData.sort((a, b) => {
+          const statusA = a['Windows 11 Status'] || 'Unknown'
+          const statusB = b['Windows 11 Status'] || 'Unknown'
+          return (statusOrder[statusA] || 5) - (statusOrder[statusB] || 5)
+        })
          
          // Site header
          pdf.setFontSize(14)

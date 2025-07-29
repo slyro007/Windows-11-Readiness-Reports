@@ -1,180 +1,156 @@
-# Windows 11 Readiness Report Web Application
+# Windows 11 Readiness Report - Web Application
 
-A modern, lightweight web application for generating comprehensive Windows 11 readiness reports from RMM and ScalePad CSV data. Built with Next.js 14, Material-UI, and optimized for Vercel deployment.
+![Wolff Logics Logo](public/wolff-logics-logo.png)
+
+A comprehensive web application for analyzing and reporting Windows 11 compatibility across enterprise environments. This tool processes RMM (Remote Monitoring and Management) reports and ScalePad data to generate detailed Windows 11 readiness assessments.
 
 ## 🚀 Features
 
-- **Material Design UI** - Modern, dark-mode interface with smooth animations
-- **Drag & Drop File Upload** - Support for RMM and ScalePad CSV files
-- **Real-time Processing** - Background processing with live progress indicators
-- **Comprehensive Analysis** - Windows 11 compatibility, SecureBoot capabilities, and hardware assessment
-- **Multiple Export Formats** - Generate both Excel and HTML reports
-- **Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
-- **Vercel Ready** - Optimized for serverless deployment
+### 📊 **Comprehensive Analysis**
+- **Windows 11 Compatibility Assessment**: Analyzes hardware requirements including RAM, TPM, CPU, and SecureBoot
+- **Multi-Source Data Processing**: Combines RMM reports with ScalePad warranty data
+- **Intelligent Status Detection**: Automatically categorizes machines as Pass, Fail, Unsupported, or Offline
 
-## 📊 Report Analysis
+### 📈 **Interactive Dashboard**
+- **Real-time Charts**: Interactive pie charts showing overall compatibility breakdown
+- **Sortable Tables**: Click any column header to sort workstation data
+- **Site-by-Site Analysis**: Expandable sections for each location
+- **Status Summary Cards**: Visual overview of compatibility statistics
 
-The application processes your data to provide:
+### 📄 **Professional Reports**
+- **PDF Generation**: High-quality, print-ready PDF reports with company branding
+- **CSV Export**: Clean data export for further analysis
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
+- **Dark/Light Mode**: Toggle between themes for comfortable viewing
 
-- **Windows 11 Compatibility Status**
-  - Compatible devices
-  - Unsupported devices (compatible but SecureBoot issues)
-  - Not compatible devices
-  - Offline/unknown status devices
+### 🏢 **Multi-Company Support**
+- **Company Management**: Smart dropdown for existing companies with auto-population
+- **Report History**: Track and revisit previous assessments
+- **Tenant-based Organization**: Organize reports by company tenant codes
 
-- **SecureBoot Capability Tracking**
-  - Capable & Enabled
-  - Capable but Disabled
-  - Not Capable
-  - Unknown Status
+## 🛠️ Technology Stack
 
-- **Hardware Analysis**
-  - RAM requirements
-  - CPU compatibility
-  - TPM version tracking
-  - Warranty information integration
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **UI Framework**: Material-UI (MUI) with custom theming
+- **Charts**: Recharts for interactive data visualization
+- **PDF Generation**: jsPDF with custom table rendering
+- **Animation**: Framer Motion for smooth transitions
+- **Storage**: LocalStorage for client-side data persistence
 
-## 🛠️ Tech Stack
+## 📦 Installation
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
-- **UI Framework**: Material-UI (MUI) with custom dark theme
-- **Animations**: Framer Motion
-- **File Processing**: PapaParse for CSV handling
-- **Styling**: Tailwind CSS + Material-UI
-- **Deployment**: Vercel-ready configuration
-
-## 📋 Prerequisites
-
+### Prerequisites
 - Node.js 18.0 or higher
 - npm or yarn package manager
 
-## 🚀 Quick Start
-
-### Local Development
-
+### Setup
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd windows11-report-webapp
+   git clone https://github.com/your-username/Windows11-Readiness-Webapp.git
+   cd Windows11-Readiness-Webapp
    ```
 
 2. **Install dependencies**
    ```bash
    npm install
+   # or
+   yarn install
    ```
 
-3. **Start development server**
+3. **Run the development server**
    ```bash
    npm run dev
+   # or
+   yarn dev
    ```
 
-4. **Open in browser**
-   Navigate to `http://localhost:3000`
+4. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-### Vercel Deployment
+## 📋 Usage
 
-1. **Install Vercel CLI**
-   ```bash
-   npm install -g vercel
-   ```
+### 1. **Upload Reports**
+- Upload your RMM report (Excel format)
+- Upload ScalePad report (Excel format) - Optional but recommended for warranty data
+- Enter company information (use dropdown for existing companies)
 
-2. **Deploy to Vercel**
-   ```bash
-   vercel
-   ```
+### 2. **Review Results**
+- Interactive dashboard shows compatibility breakdown
+- Sort tables by any column (Workstation, Status, RAM, CPU, etc.)
+- Expand site sections to view detailed machine information
+- Toggle between light and dark themes
 
-3. **Follow the prompts** to link your project and deploy
+### 3. **Generate Reports**
+- **PDF Download**: Professional report with company branding
+- **CSV Export**: Clean data for spreadsheet analysis
+- **Report History**: Access previously generated reports
 
-## 📁 File Requirements
+## 📊 Report Categories
 
-### RMM Report CSV
-Required columns:
-- `Workstation` - Device hostname
-- `Windows 11 Ready` - Compatibility status (Pass/Fail)
-- `RAM` - Memory specifications
-- `CPU` - Processor information
-- `TPM Version` - TPM chip version
-- `SecureBoot` - SecureBoot status (Enabled/Disabled/Not Capable)
-- `Serial` - Device serial number (for ScalePad matching)
-
-### ScalePad Report CSV
-Required columns:
-- `Serial` - Device serial number (matches RMM data)
-- `Warranty Expires` - Warranty expiration date
-
-## 🎨 Design Features
-
-- **Dark Mode by Default** - Easy on the eyes for IT professionals
-- **Material Design 3** - Modern, intuitive interface
-- **Smooth Animations** - Framer Motion powered transitions
-- **Responsive Layout** - Works on all screen sizes
-- **Progress Indicators** - Real-time processing feedback
-- **Error Handling** - Comprehensive validation and error messages
+| Status | Description | Criteria |
+|--------|-------------|----------|
+| **Pass** | Ready for Windows 11 | Meets all hardware requirements, SecureBoot enabled |
+| **Fail** | Hardware insufficient | Missing RAM, TPM, or unsupported CPU |
+| **Unsupported** | Hardware capable but configuration issues | Usually SecureBoot disabled or other config problems |
+| **Offline** | Machine unavailable | No data available from RMM scan |
 
 ## 🔧 Configuration
 
 ### Environment Variables
+Create a `.env.local` file in the root directory:
+
 ```env
-NODE_ENV=production
+# Optional: Custom API endpoints
+NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# Optional: Analytics
+NEXT_PUBLIC_GA_ID=your-analytics-id
 ```
 
-### Vercel Configuration
-The project includes `vercel.json` with optimized settings:
-- 30-second function timeout for large file processing
-- Next.js framework detection
-- Production environment configuration
+### Company Branding
+- Replace `public/wolff-logics-logo.png` with your company logo
+- Update company information in the header sections
+- Modify color themes in `src/components/providers/ThemeProvider.tsx`
 
-## 📊 Output Formats
+## 📁 Project Structure
 
-### Excel Report (.xlsx)
-- Complete device inventory
-- All compatibility metrics
-- SecureBoot analysis
-- Warranty tracking
-- Filterable and sortable data
+```
+Windows11-Readiness-Webapp/
+├── public/                 # Static assets
+│   └── wolff-logics-logo.png
+├── src/
+│   ├── app/               # Next.js app directory
+│   │   ├── api/          # API routes
+│   │   ├── globals.css   # Global styles
+│   │   ├── layout.tsx    # Root layout
+│   │   └── page.tsx      # Home page
+│   └── components/        # React components
+│       ├── CompanyInfoForm.tsx    # Company selection form
+│       ├── FileUploadZone.tsx     # File upload interface
+│       ├── ProcessingStatus.tsx   # Processing indicator
+│       ├── ReportHistory.tsx      # Historical reports
+│       ├── ResultsPreview.tsx     # Main results display
+│       └── providers/
+│           └── ThemeProvider.tsx  # Theme management
+├── analyze_excel.py       # Python analysis script
+├── process_company.py     # Company processing utilities
+└── package.json          # Dependencies and scripts
+```
 
-### HTML Report (.html)
-- Interactive dashboard
-- Visual charts and graphs
-- Color-coded status indicators
-- Print-ready formatting
-- Dark theme styling
-
-## 🔍 Processing Logic
-
-The application implements the same logic as your existing Python scripts:
-
-1. **Data Validation** - Verify required columns and file formats
-2. **Data Merging** - Match RMM and ScalePad data by serial numbers
-3. **Compatibility Analysis** - Assess Windows 11 readiness
-4. **SecureBoot Processing** - Categorize SecureBoot capabilities
-5. **Report Generation** - Create formatted Excel and HTML outputs
-
-## 🚦 API Endpoints
+## 🔍 API Endpoints
 
 ### POST `/api/process-reports`
-Process uploaded CSV files and generate reports.
+Processes uploaded RMM and ScalePad reports
 
 **Request Body:**
 ```json
 {
-  "files": [
-    {
-      "name": "RMM Report.csv",
-      "type": "rmm",
-      "data": [...],
-      "size": 1024
-    },
-    {
-      "name": "ScalePad Report.csv",
-      "type": "scalepad", 
-      "data": [...],
-      "size": 512
-    }
-  ],
+  "rmmFile": "base64-encoded-excel-file",
+  "scalepadFile": "base64-encoded-excel-file", // Optional
   "companyInfo": {
-    "name": "Your Company",
-    "site": "Main Office"
+    "name": "Company Name",
+    "site": "Location", // Optional
+    "tenant": "TENANT_CODE"
   }
 }
 ```
@@ -184,31 +160,53 @@ Process uploaded CSV files and generate reports.
 {
   "success": true,
   "summary": {
-    "total": 100,
-    "compatible": 75,
-    "unsupported": 10,
-    "notCompatible": 15,
-    "offline": 0
+    "total": 50,
+    "compatible": 30,
+    "notCompatible": 10,
+    "unsupported": 8,
+    "offline": 2
   },
-  "secureBoot": {
-    "capableEnabled": 60,
-    "capableDisabled": 25,
-    "notCapable": 10,
-    "unknown": 5
-  },
+  "data": [...], // Processed machine data
+  "charts": {...}, // Chart data
   "files": {
-    "excel": "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,...",
-    "html": "data:text/html;base64,..."
+    "excel": "base64-csv-data"
   }
 }
 ```
 
-## 🔒 Security & Privacy
+## 🎨 Customization
 
-- **Client-side Processing** - Files are processed in-browser when possible
-- **No Data Storage** - Reports are generated and downloaded immediately
-- **Temporary Processing** - Server-side processing uses temporary memory only
-- **No External Dependencies** - All processing logic is self-contained
+### Themes
+The application supports both light and dark themes. Customize colors in:
+- `src/components/providers/ThemeProvider.tsx`
+- Update Material-UI theme configuration
+- Modify chart colors in `src/components/ResultsPreview.tsx`
+
+### PDF Styling
+PDF generation styling can be customized in the `downloadPDF` function:
+- Header styling and logo placement
+- Color schemes (always uses light mode for PDFs)
+- Table formatting and column widths
+- Page layout and margins
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **File Upload Errors**
+   - Ensure Excel files are in `.xlsx` format
+   - Check file size limits (default: 10MB)
+   - Verify column headers match expected format
+
+2. **PDF Generation Issues**
+   - Large datasets may take longer to process
+   - Ensure sufficient browser memory for PDF generation
+   - Check console for any JavaScript errors
+
+3. **Data Processing Errors**
+   - Verify RMM report contains "Output" column with machine data
+   - Check that machine names match between RMM and ScalePad reports
+   - Ensure proper date formats in warranty data
 
 ## 🤝 Contributing
 
@@ -218,19 +216,30 @@ Process uploaded CSV files and generate reports.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the ISC License - see the LICENSE file for details.
+This project is proprietary software developed by Wolff Logics for Windows 11 migration assessments.
 
 ## 🆘 Support
 
-For support, email your IT team or create an issue in the repository.
+For technical support or feature requests:
+- Email: support@wolfflogics.com
+- Documentation: [Internal Wiki](https://wiki.wolfflogics.com)
+- Issue Tracker: GitHub Issues
 
-## 🔄 Version History
+## 📈 Changelog
 
-- **v1.0.0** - Initial release with core functionality
-  - File upload and validation
-  - Windows 11 compatibility analysis
-  - SecureBoot capability tracking
-  - Excel and HTML report generation
-  - Vercel deployment optimization
+### v1.0.0 (Current)
+- ✅ Initial release with full Windows 11 compatibility analysis
+- ✅ Multi-company support with smart dropdown selection
+- ✅ Professional PDF report generation with auto-fit columns
+- ✅ Sortable tables with comprehensive filtering
+- ✅ CSV export functionality
+- ✅ Dark/light theme support
+- ✅ Responsive design for all devices
+- ✅ Report history and management
+- ✅ Enhanced SecureBoot logic for accurate assessments
+
+---
+
+**Built with ❤️ by Wolff Logics IT Solutions**

@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import Papa from 'papaparse'
+import * as XLSX from 'xlsx'
 
 interface UploadedFile {
   name: string
@@ -45,9 +46,13 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
   const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const validateFile = (file: File): { isValid: boolean; error?: string; type?: 'rmm' | 'scalepad' } => {
-    // Check file type
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      return { isValid: false, error: 'Only CSV files are allowed' }
+    // Check file type - accept CSV and Excel files
+    const fileName = file.name.toLowerCase()
+    const isCsv = fileName.endsWith('.csv')
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls')
+    
+    if (!isCsv && !isExcel) {
+      return { isValid: false, error: 'Only CSV and Excel files (.csv, .xlsx, .xls) are allowed' }
     }
 
     // Check file size (max 50MB)
@@ -56,7 +61,6 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
     }
 
     // Determine file type based on filename
-    const fileName = file.name.toLowerCase()
     let type: 'rmm' | 'scalepad'
 
     if (fileName.includes('rmm') || fileName.includes('rmm report')) {
@@ -74,54 +78,122 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
     if (!data || data.length === 0) return false
 
     const requiredColumns = {
-      rmm: ['Workstation', 'Windows 11 Ready', 'RAM', 'CPU', 'TPM Version', 'SecureBoot'],
-      scalepad: ['Serial', 'Warranty Expires']
+      rmm: ['Machine name', 'Friendly name', 'Site name', 'Output', 'Status'],
+      scalepad: ['Name', 'Serial', 'Expires']
     }
 
     const headers = Object.keys(data[0] || {})
     const required = requiredColumns[type]
 
-    return required.some(col => 
+    // Check if at least some of the required columns are present
+    const foundColumns = required.filter(col => 
       headers.some(header => 
         header.toLowerCase().includes(col.toLowerCase()) ||
         col.toLowerCase().includes(header.toLowerCase())
       )
     )
+
+    // For RMM files, we need at least 'Machine name' and 'Output' columns
+    if (type === 'rmm') {
+      return foundColumns.length >= 2 && 
+             (foundColumns.some(col => col.toLowerCase().includes('machine')) ||
+              foundColumns.some(col => col.toLowerCase().includes('output')))
+    }
+    
+    // For ScalePad files, we need at least 'Name' and one of 'Serial' or 'Expires'
+    if (type === 'scalepad') {
+      return foundColumns.length >= 2 && 
+             foundColumns.some(col => col.toLowerCase().includes('name'))
+    }
+
+    return foundColumns.length >= 2
+  }
+
+  const parseExcelFile = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { 
+            type: 'array',
+            cellText: false,
+            cellDates: true,
+            raw: false
+          })
+          const sheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[sheetName]
+          
+          // Use direct sheet_to_json to properly handle all data types
+          const result = XLSX.utils.sheet_to_json(worksheet, { 
+            defval: '',
+            raw: false,
+            dateNF: 'yyyy-mm-dd'
+          })
+          
+          if (result.length === 0) {
+            reject(new Error('Excel file appears to be empty'))
+            return
+          }
+          
+          resolve(result)
+        } catch (error) {
+          reject(new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`))
+        }
+      }
+      reader.onerror = () => reject(new Error('Failed to read Excel file'))
+      reader.readAsArrayBuffer(file)
+    })
   }
 
   const processFile = (file: File): Promise<UploadedFile> => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const validation = validateFile(file)
       if (!validation.isValid) {
         reject(new Error(validation.error))
         return
       }
 
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          if (results.errors.length > 0) {
-            reject(new Error(`CSV parsing error: ${results.errors[0].message}`))
-            return
-          }
-
-          if (!validateCsvColumns(results.data, validation.type!)) {
-            reject(new Error(`Invalid ${validation.type?.toUpperCase()} file format. Missing required columns.`))
-            return
-          }
-
-          resolve({
-            name: file.name,
-            type: validation.type!,
-            data: results.data,
-            size: file.size,
+      try {
+        let data: any[]
+        
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          // Parse CSV file
+          data = await new Promise((resolve, reject) => {
+            Papa.parse(file, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                if (results.errors.length > 0) {
+                  reject(new Error(`CSV parsing error: ${results.errors[0].message}`))
+                  return
+                }
+                resolve(results.data)
+              },
+              error: (error) => {
+                reject(new Error(`Failed to parse CSV: ${error.message}`))
+              }
+            })
           })
-        },
-        error: (error) => {
-          reject(new Error(`Failed to parse CSV: ${error.message}`))
+        } else {
+          // Parse Excel file
+          data = await parseExcelFile(file)
         }
-      })
+
+        if (!validateCsvColumns(data, validation.type!)) {
+          reject(new Error(`Invalid ${validation.type?.toUpperCase()} file format. Missing required columns.`))
+          return
+        }
+
+        resolve({
+          name: file.name,
+          type: validation.type!,
+          data: data,
+          size: file.size,
+        })
+      } catch (error) {
+        reject(error)
+      }
     })
   }
 
@@ -233,7 +305,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                 <input
                   type="file"
                   multiple
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   onChange={handleFileInput}
                   style={{ display: 'none' }}
                   id="file-upload"
@@ -248,11 +320,11 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                 />
                 
                 <Typography variant="h5" gutterBottom>
-                  {dragActive ? 'Drop files here' : 'Upload CSV Files'}
+                  {dragActive ? 'Drop files here' : 'Upload Files'}
                 </Typography>
                 
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Drag and drop your RMM Report and ScalePad Report CSV files here, or click to browse
+                  Drag and drop your RMM Report and ScalePad Report files (CSV or Excel) here, or click to browse
                 </Typography>
                 
                 <Button
@@ -298,7 +370,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                   </ListItemIcon>
                   <ListItemText 
                     primary="RMM Report"
-                    secondary="Must contain Workstation, Windows 11 Ready, RAM, CPU, TPM, SecureBoot columns"
+                    secondary="Must contain Machine name, Output, Status columns"
                   />
                 </ListItem>
                 
@@ -312,7 +384,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                   </ListItemIcon>
                   <ListItemText 
                     primary="ScalePad Report"
-                    secondary="Must contain Serial and Warranty Expires columns"
+                    secondary="Must contain Name, Serial, Expires columns"
                   />
                 </ListItem>
               </List>

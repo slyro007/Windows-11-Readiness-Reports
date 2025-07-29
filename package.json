@@ -9,34 +9,45 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "^14.0.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "@mui/material": "^5.14.0",
+    "@ai-sdk/openai": "^0.0.24",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.0",
+    "@mui/material": "^5.14.0",
     "@mui/x-data-grid": "^6.18.0",
     "ai": "^2.2.0",
-    "@ai-sdk/openai": "^0.0.24",
-    "papaparse": "^5.4.0",
+    "framer-motion": "^10.16.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.294.0",
-    "framer-motion": "^10.16.0"
+    "next": "^14.0.0",
+    "papaparse": "^5.4.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "recharts": "^3.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
+    "@types/papaparse": "^5.3.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "@types/papaparse": "^5.3.0",
-    "tailwindcss": "^3.3.0",
-    "postcss": "^8.4.0",
+    "@types/xlsx": "^0.0.35",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.0.0",
-    "eslint-config-next": "^14.0.0"
+    "eslint-config-next": "^14.0.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0"
   },
-  "keywords": ["windows11", "readiness", "report", "rmm", "scalepad"],
+  "keywords": [
+    "windows11",
+    "readiness",
+    "report",
+    "rmm",
+    "scalepad"
+  ],
   "author": "",
   "license": "ISC",
   "description": "Web application for generating Windows 11 readiness reports from RMM and ScalePad data"
-} 
+}

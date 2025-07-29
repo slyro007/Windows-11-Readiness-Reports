@@ -22,16 +22,9 @@ import { motion } from 'framer-motion'
 
 interface ProcessingStatusProps {
   processing: boolean
-  companyInfo: { name: string; site: string }
+  companyInfo: { name: string; site: string; tenant: string }
   fileCount: number
 }
-
-const processingSteps = [
-  { label: 'Parsing CSV Data', icon: DataIcon, duration: 2000 },
-  { label: 'Analyzing Windows 11 Readiness', icon: AnalyticsIcon, duration: 3000 },
-  { label: 'Processing SecureBoot Capabilities', icon: AnalyticsIcon, duration: 2500 },
-  { label: 'Generating Reports', icon: ReportIcon, duration: 4000 },
-]
 
 const ProcessingStatus: React.FC<ProcessingStatusProps> = ({ 
   processing, 
@@ -40,6 +33,14 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
+
+  // Dynamic processing steps based on company name
+  const processingSteps = [
+    { label: 'Parsing CSV Data', icon: DataIcon, duration: 2000 },
+    { label: `Parsing ${companyInfo.name || 'Company'} Data`, icon: DataIcon, duration: 1500 },
+    { label: 'Analyzing Windows 11 Readiness', icon: AnalyticsIcon, duration: 4000 },
+    { label: 'Generating Reports', icon: ReportIcon, duration: 3000 },
+  ]
 
   useEffect(() => {
     if (!processing) return
@@ -101,8 +102,6 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
 
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 3 }}>
               <Chip label={`${fileCount} Files`} color="primary" size="small" />
-              <Chip label="Dark Mode Ready" color="secondary" size="small" />
-              <Chip label="Material Design" color="success" size="small" />
             </Box>
           </Box>
 
@@ -194,17 +193,6 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
               )
             })}
           </Stepper>
-
-          {/* Fun Facts */}
-          <Box sx={{ mt: 4, p: 3, backgroundColor: 'rgba(33, 150, 243, 0.1)', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Did you know?
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              This analysis includes tracking of SecureBoot capabilities, TPM versions, 
-              RAM requirements, and CPU compatibility to ensure comprehensive Windows 11 readiness assessment.
-            </Typography>
-          </Box>
         </CardContent>
       </Card>
     </motion.div>

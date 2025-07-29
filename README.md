@@ -53,7 +53,14 @@ A comprehensive web application for analyzing and reporting Windows 11 compatibi
    cd Windows-11-Readiness-Reports
    ```
 
-2. **Build and run with Docker**
+2. **Deploy with automated script**
+   ```bash
+   # Make the deploy script executable and run it
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
+   **Or manually build and run:**
    ```bash
    # Build the Docker image
    docker build -t windows11-readiness-app .
@@ -72,6 +79,9 @@ A comprehensive web application for analyzing and reporting Windows 11 compatibi
 
 #### Docker Management Commands
 ```bash
+# Update the application (automated)
+./update-app.sh
+
 # View running containers
 docker ps
 
@@ -84,7 +94,7 @@ docker stop windows11-app
 # Start the application
 docker start windows11-app
 
-# Update the application
+# Manual update process
 git pull origin master
 docker build --no-cache -t windows11-readiness-app .
 docker stop windows11-app && docker rm windows11-app
@@ -192,6 +202,8 @@ Windows11-Readiness-Reports/
 │           └── ThemeProvider.tsx  # Theme management
 ├── data/                  # Server-side storage (created at runtime)
 │   └── reports.json       # Persistent report storage
+├── deploy.sh              # Initial deployment script
+├── update-app.sh          # Production update script
 ├── Dockerfile             # Docker container configuration
 ├── .dockerignore          # Docker build exclusions
 ├── analyze_excel.py       # Python analysis script

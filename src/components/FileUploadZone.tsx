@@ -68,31 +68,37 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
   const detectFileType = (data: any[]): { type: 'rmm' | 'scalepad' | null; confidence: number } => {
     if (!data || data.length === 0) return { type: null, confidence: 0 }
 
-    const headers = Object.keys(data[0] || {}).map(h => h.toLowerCase())
+    const headers = Object.keys(data[0] || {}).map(h => h.toLowerCase().trim())
     
-    // RMM file indicators
-    const rmmKeywords = ['machine name', 'machine_name', 'machinename', 'friendly name', 'output', 'status', 'site name', 'site_name']
-    const rmmMatches = rmmKeywords.filter(keyword => 
-      headers.some(header => 
-        header.includes(keyword) || keyword.includes(header)
-      )
-    )
+    console.log('Analyzing headers:', headers) // Debug log
+    
+    // RMM file indicators - more flexible matching
+    const hasOutput = headers.some(h => h.includes('output'))
+    const hasMachine = headers.some(h => h.includes('machine'))
+    const hasStatus = headers.some(h => h.includes('status'))
+    const hasFriendly = headers.some(h => h.includes('friendly'))
+    const hasSite = headers.some(h => h.includes('site'))
+    
+    // ScalePad file indicators
+    const hasName = headers.some(h => h === 'name' || h.includes('name'))
+    const hasSerial = headers.some(h => h.includes('serial'))
+    const hasExpires = headers.some(h => h.includes('expires') || h.includes('expiry') || h.includes('warranty'))
 
-    // ScalePad file indicators  
-    const scalepadKeywords = ['name', 'serial', 'expires', 'warranty', 'expiry']
-    const scalepadMatches = scalepadKeywords.filter(keyword =>
-      headers.some(header => 
-        header.includes(keyword) || keyword.includes(header)
-      )
-    )
-
-    // Determine type based on matches
-    if (rmmMatches.length >= 2 && (headers.some(h => h.includes('machine')) || headers.some(h => h.includes('output')))) {
-      return { type: 'rmm', confidence: rmmMatches.length }
-    } else if (scalepadMatches.length >= 2 && headers.some(h => h.includes('name'))) {
-      return { type: 'scalepad', confidence: scalepadMatches.length }
+    // RMM detection - needs Output column as primary indicator
+    if (hasOutput && (hasMachine || hasStatus)) {
+      const confidence = [hasOutput, hasMachine, hasStatus, hasFriendly, hasSite].filter(Boolean).length
+      console.log('Detected as RMM with confidence:', confidence)
+      return { type: 'rmm', confidence }
+    }
+    
+    // ScalePad detection - needs Name and either Serial or Expires
+    if (hasName && (hasSerial || hasExpires)) {
+      const confidence = [hasName, hasSerial, hasExpires].filter(Boolean).length
+      console.log('Detected as ScalePad with confidence:', confidence)
+      return { type: 'scalepad', confidence }
     }
 
+    console.log('Could not detect file type. Headers found:', headers)
     return { type: null, confidence: 0 }
   }
 

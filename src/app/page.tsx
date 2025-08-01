@@ -67,7 +67,9 @@ export default function HomePage() {
   }
 
   const handleProcessReports = () => {
-    if (uploadedFiles.length === 2) {
+    const hasRmm = uploadedFiles.some(f => f.type === 'rmm')
+    const hasScalepad = uploadedFiles.some(f => f.type === 'scalepad')
+    if (hasRmm && hasScalepad) {
       setActiveStep(1)
     }
   }
@@ -365,10 +367,38 @@ export default function HomePage() {
               transition={{ duration: 0.3 }}
             >
               {activeStep === 0 && (
-                <FileUploadZone 
-                  onFilesUploaded={handleFilesUploaded}
-                  uploadedFiles={uploadedFiles}
-                />
+                <Box>
+                  <FileUploadZone 
+                    onFilesUploaded={handleFilesUploaded}
+                    uploadedFiles={uploadedFiles}
+                  />
+                  {(() => {
+                    const hasRmm = uploadedFiles.some(f => f.type === 'rmm')
+                    const hasScalepad = uploadedFiles.some(f => f.type === 'scalepad')
+                    return hasRmm && hasScalepad
+                  })() && (
+                    <Box sx={{ mt: 3, textAlign: 'center' }}>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={handleProcessReports}
+                        sx={{
+                          px: 4,
+                          py: 2,
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                          '&:hover': {
+                            background: 'linear-gradient(45deg, #1976D2 30%, #1CB5E0 90%)',
+                          },
+                        }}
+                        startIcon={<AssessmentIcon />}
+                      >
+                        Process Reports
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
               )}
 
               {activeStep === 1 && (

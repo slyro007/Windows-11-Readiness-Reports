@@ -256,19 +256,23 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
         setValidationErrors(errors)
       }
 
-      // Check if we have both file types
-      const hasRmm = processedFiles.some(f => f.type === 'rmm')
-      const hasScalepad = processedFiles.some(f => f.type === 'scalepad')
-
       if (processedFiles.length > 0) {
-        onFilesUploaded([...uploadedFiles, ...processedFiles])
-      }
+        const updatedFiles = [...uploadedFiles, ...processedFiles]
+        onFilesUploaded(updatedFiles)
+        
+        // Check if we have both file types after all uploads
+        const hasRmm = updatedFiles.some(f => f.type === 'rmm')
+        const hasScalepad = updatedFiles.some(f => f.type === 'scalepad')
 
-      if (!hasRmm || !hasScalepad) {
-        const missing: string[] = []
-        if (!hasRmm) missing.push('RMM Report')
-        if (!hasScalepad) missing.push('ScalePad Report')
-        setValidationErrors(prev => [...prev, `Missing required files: ${missing.join(', ')}`])
+        if (hasRmm && hasScalepad) {
+          // Clear validation errors when both files are present
+          setValidationErrors([])
+        } else {
+          const missing: string[] = []
+          if (!hasRmm) missing.push('RMM Report')
+          if (!hasScalepad) missing.push('ScalePad Report')
+          setValidationErrors(prev => [...prev, `Missing required files: ${missing.join(', ')}`])
+        }
       }
 
     } finally {

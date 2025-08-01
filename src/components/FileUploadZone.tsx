@@ -23,6 +23,7 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckIcon,
   Warning as WarningIcon,
+  ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import Papa from 'papaparse'
@@ -38,9 +39,10 @@ interface UploadedFile {
 interface FileUploadZoneProps {
   onFilesUploaded: (files: UploadedFile[]) => void
   uploadedFiles: UploadedFile[]
+  onNext?: () => void
 }
 
-const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, uploadedFiles }) => {
+const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, uploadedFiles, onNext }) => {
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
@@ -366,16 +368,34 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                   Drag and drop your RMM Report and ScalePad Report files (CSV or Excel) here, or click to browse
                 </Typography>
                 
-                <Button
-                  variant="contained"
-                  component="label"
-                  htmlFor="file-upload"
-                  startIcon={<CloudUploadIcon />}
-                  disabled={uploading}
-                  sx={{ mb: 2 }}
-                >
-                  Choose Files
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    component="label"
+                    htmlFor="file-upload"
+                    startIcon={<CloudUploadIcon />}
+                    disabled={uploading}
+                    sx={{ mb: 2 }}
+                  >
+                    Choose Files
+                  </Button>
+                  
+                  {isComplete && onNext && (
+                    <Button
+                      variant="contained"
+                      onClick={onNext}
+                      disabled={uploading}
+                      startIcon={<ArrowForwardIcon />}
+                      sx={{ 
+                        mb: 2,
+                        px: 4,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      Next
+                    </Button>
+                  )}
+                </Box>
                 
                 {uploading && (
                   <Box sx={{ mt: 2 }}>

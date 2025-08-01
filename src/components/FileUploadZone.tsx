@@ -60,18 +60,40 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
       return { isValid: false, error: 'File size must be less than 50MB' }
     }
 
-    // Determine file type based on filename
-    let type: 'rmm' | 'scalepad'
+    // For now, just validate the file format - we'll determine the type after parsing the content
+    // This allows files like "Windows 11 Readiness Check_08_01_2025.xlsx" to be uploaded
+    return { isValid: true }
+  }
 
-    if (fileName.includes('rmm') || fileName.includes('rmm report')) {
-      type = 'rmm'
-    } else if (fileName.includes('scalepad') || fileName.includes('scale pad')) {
-      type = 'scalepad'
-    } else {
-      return { isValid: false, error: 'File must be either RMM Report or ScalePad Report (filename should contain "rmm" or "scalepad")' }
+  const detectFileType = (data: any[]): { type: 'rmm' | 'scalepad' | null; confidence: number } => {
+    if (!data || data.length === 0) return { type: null, confidence: 0 }
+
+    const headers = Object.keys(data[0] || {}).map(h => h.toLowerCase())
+    
+    // RMM file indicators
+    const rmmKeywords = ['machine name', 'machine_name', 'machinename', 'friendly name', 'output', 'status', 'site name', 'site_name']
+    const rmmMatches = rmmKeywords.filter(keyword => 
+      headers.some(header => 
+        header.includes(keyword) || keyword.includes(header)
+      )
+    )
+
+    // ScalePad file indicators  
+    const scalepadKeywords = ['name', 'serial', 'expires', 'warranty', 'expiry']
+    const scalepadMatches = scalepadKeywords.filter(keyword =>
+      headers.some(header => 
+        header.includes(keyword) || keyword.includes(header)
+      )
+    )
+
+    // Determine type based on matches
+    if (rmmMatches.length >= 2 && (headers.some(h => h.includes('machine')) || headers.some(h => h.includes('output')))) {
+      return { type: 'rmm', confidence: rmmMatches.length }
+    } else if (scalepadMatches.length >= 2 && headers.some(h => h.includes('name'))) {
+      return { type: 'scalepad', confidence: scalepadMatches.length }
     }
 
-    return { isValid: true, type }
+    return { type: null, confidence: 0 }
   }
 
   const validateCsvColumns = (data: any[], type: 'rmm' | 'scalepad'): boolean => {
@@ -180,14 +202,21 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
           data = await parseExcelFile(file)
         }
 
-        if (!validateCsvColumns(data, validation.type!)) {
-          reject(new Error(`Invalid ${validation.type?.toUpperCase()} file format. Missing required columns.`))
+        // Detect file type based on content structure
+        const detection = detectFileType(data)
+        if (!detection.type) {
+          reject(new Error(`Unable to determine file type. File must be either an RMM Report (with Machine name, Output columns) or ScalePad Report (with Name, Serial columns).`))
+          return
+        }
+
+        if (!validateCsvColumns(data, detection.type)) {
+          reject(new Error(`Invalid ${detection.type.toUpperCase()} file format. Missing required columns.`))
           return
         }
 
         resolve({
           name: file.name,
-          type: validation.type!,
+          type: detection.type,
           data: data,
           size: file.size,
         })
@@ -370,7 +399,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                   </ListItemIcon>
                   <ListItemText 
                     primary="RMM Report"
-                    secondary="Must contain Machine name, Output, Status columns"
+                    secondary="Excel/CSV with Machine name, Output, Status columns (any filename)"
                   />
                 </ListItem>
                 
@@ -384,7 +413,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesUploaded, upload
                   </ListItemIcon>
                   <ListItemText 
                     primary="ScalePad Report"
-                    secondary="Must contain Name, Serial, Expires columns"
+                    secondary="Excel/CSV with Name, Serial, Expires columns (any filename)"
                   />
                 </ListItem>
               </List>

@@ -63,7 +63,11 @@ export default function HomePage() {
   const handleFilesUploaded = (files: UploadedFile[]) => {
     setUploadedFiles(files)
     setError(null)
-    if (files.length === 2) {
+    // Don't automatically advance - wait for user to click "Process Reports"
+  }
+
+  const handleProcessReports = () => {
+    if (uploadedFiles.length === 2) {
       setActiveStep(1)
     }
   }
